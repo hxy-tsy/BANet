@@ -22,11 +22,11 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 @torch.no_grad()
-def validate_eth3d(model, iters=32, mixed_prec=False):
+def validate_eth3d(model, data_path='/data/StereoDatasets/', iters=32, mixed_prec=False):
     """ Peform validation using the ETH3D (train) split """
     model.eval()
     aug_params = {}
-    val_dataset = datasets.ETH3D(aug_params)
+    val_dataset = datasets.ETH3D(aug_params, root=os.path.join(data_path, 'eth3d'))
 
     out_list, epe_list = [], []
     for val_id in range(len(val_dataset)):
@@ -68,11 +68,11 @@ def validate_eth3d(model, iters=32, mixed_prec=False):
 
 
 @torch.no_grad()
-def validate_kitti(model, iters=32, mixed_prec=False):
+def validate_kitti(model, data_path='/data/StereoDatasets/', iters=32, mixed_prec=False):
     """ Peform validation using the KITTI-2015 (train) split """
     model.eval()
     aug_params = {}
-    val_dataset = datasets.KITTI(aug_params, image_set='training')
+    val_dataset = datasets.KITTI(aug_params, root=os.path.join(data_path, 'kitti'), image_set='training')
     torch.backends.cudnn.benchmark = True
 
     out_list, epe_list, elapsed_list = [], [], []
@@ -191,11 +191,11 @@ def validate_sceneflow(model, data_path='/data/StereoDatasets/'):
 
 
 @torch.no_grad()
-def validate_middlebury(model, iters=32, split='MiddEval3', resolution='F', mixed_prec=False):
+def validate_middlebury(model, data_path='/data/StereoDatasets/', iters=32, split='MiddEval3', resolution='F', mixed_prec=False):
     """ Peform validation using the Middlebury-V3 dataset """
     model.eval()
     aug_params = {}
-    val_dataset = datasets.Middlebury(aug_params, split=split, resolution='H')
+    val_dataset = datasets.Middlebury(aug_params, root=os.path.join(data_path, 'middlebury'), split=split, resolution='H')
 
     out_list, epe_list = [], []
     for val_id in range(len(val_dataset)):
@@ -243,6 +243,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--restore_ckpt', help="restore checkpoint", default='./pretrained_models/sceneflow.pth')
     parser.add_argument('--dataset', help="dataset for evaluation", default='sceneflow', choices=["eth3d", "kitti", "sceneflow"] + [f"middlebury_{s}" for s in 'FHQ'])
+    parser.add_argument('--data_path', type=str, default='/data/StereoDatasets/', help='root path for datasets')
 
     # Architecure choices
     parser.add_argument('--max_disp', type=int, default=192, help="max disp of geometry encoding volume")
@@ -266,13 +267,13 @@ if __name__ == '__main__':
     print(f"The model has {format(count_parameters(model)/1e6, '.2f')}M learnable parameters.")
 
     if args.dataset == 'eth3d':
-        validate_eth3d(model)
+        validate_eth3d(model, data_path=args.data_path)
 
     elif args.dataset == 'kitti':
-        validate_kitti(model)
+        validate_kitti(model, data_path=args.data_path)
 
     elif args.dataset in [f"middlebury_{s}" for s in 'FHQ']:
-        validate_middlebury(model)
+        validate_middlebury(model, data_path=args.data_path)
 
     elif args.dataset == 'sceneflow':
-        validate_sceneflow(model)
+        validate_sceneflow(model, data_path=args.data_path)

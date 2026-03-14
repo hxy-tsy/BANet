@@ -141,9 +141,24 @@ class SceneFlowDatasets(StereoDataset):
         original_length = len(self.disparity_list)
         # root = osp.join(self.root, 'FlyingThings3D')
         root = self.root
-        left_images = sorted( glob(osp.join(root, self.dstype, split, '*/*/left/*.png')) )
+        left_images = sorted( glob(osp.join(root, 'flyingthings3d', self.dstype, split, '*/*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, 'Flyingthings3d', self.dstype, split, '*/*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, 'Flyingthing3d', self.dstype, split, '*/*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, 'FlyingThings3D', self.dstype, split, '*/*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, self.dstype, split, '*/*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, '**', self.dstype, split, '**', 'left', '*.png'), recursive=True) )
         right_images = [ im.replace('left', 'right') for im in left_images ]
-        disparity_images = [ im.replace(self.dstype, 'disparity').replace('.png', '.pfm') for im in left_images ]
+        disparity_images = []
+        for im in left_images:
+            disp_path = im.replace(self.dstype, 'disparity').replace('.png', '.pfm')
+            if not os.path.exists(disp_path):
+                disp_path = im.replace(self.dstype, 'Disparity').replace('.png', '.pfm')
+            disparity_images.append(disp_path)
 
         # Choose a random subset of 400 images for validation
         state = np.random.get_state()
@@ -163,9 +178,20 @@ class SceneFlowDatasets(StereoDataset):
 
         original_length = len(self.disparity_list)
         root = self.root
-        left_images = sorted( glob(osp.join(root, self.dstype, split, '*/left/*.png')) )
+        left_images = sorted( glob(osp.join(root, 'monkaa', self.dstype, split, '*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, 'Monkaa', self.dstype, split, '*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, self.dstype, split, '*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, '**', self.dstype, split, '**', 'left', '*.png'), recursive=True) )
         right_images = [ image_file.replace('left', 'right') for image_file in left_images ]
-        disparity_images = [ im.replace(self.dstype, 'disparity').replace('.png', '.pfm') for im in left_images ]
+        disparity_images = []
+        for im in left_images:
+            disp_path = im.replace(self.dstype, 'disparity').replace('.png', '.pfm')
+            if not os.path.exists(disp_path):
+                disp_path = im.replace(self.dstype, 'Disparity').replace('.png', '.pfm')
+            disparity_images.append(disp_path)
 
         for img1, img2, disp in zip(left_images, right_images, disparity_images):
             self.image_list += [ [img1, img2] ]
@@ -178,9 +204,20 @@ class SceneFlowDatasets(StereoDataset):
 
         original_length = len(self.disparity_list)
         root = self.root
-        left_images = sorted( glob(osp.join(root, self.dstype, split, '*/*/*/left/*.png')) )
+        left_images = sorted( glob(osp.join(root, 'driving', self.dstype, split, '*/*/*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, 'Driving', self.dstype, split, '*/*/*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, self.dstype, split, '*/*/*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, '**', self.dstype, split, '**', 'left', '*.png'), recursive=True) )
         right_images = [ image_file.replace('left', 'right') for image_file in left_images ]
-        disparity_images = [ im.replace(self.dstype, 'disparity').replace('.png', '.pfm') for im in left_images ]
+        disparity_images = []
+        for im in left_images:
+            disp_path = im.replace(self.dstype, 'disparity').replace('.png', '.pfm')
+            if not os.path.exists(disp_path):
+                disp_path = im.replace(self.dstype, 'Disparity').replace('.png', '.pfm')
+            disparity_images.append(disp_path)
 
         for img1, img2, disp in zip(left_images, right_images, disparity_images):
             self.image_list += [ [img1, img2] ]
@@ -284,13 +321,13 @@ class KITTI(StereoDataset):
         assert os.path.exists(root)
 
         if year == 2012:
-            root_12 = '/data/StereoDatasets/kitti/2012'
+            root_12 = os.path.join(root, '2012')
             image1_list = sorted(glob(os.path.join(root_12, image_set, 'colored_0/*_10.png')))
             image2_list = sorted(glob(os.path.join(root_12, image_set, 'colored_1/*_10.png')))
             disp_list = sorted(glob(os.path.join(root_12, 'training', 'disp_occ/*_10.png'))) if image_set == 'training' else [osp.join(root, 'training/disp_occ/000085_10.png')]*len(image1_list)
 
         if year == 2015:
-            root_15 = '/data/StereoDatasets/kitti/2015'
+            root_15 = os.path.join(root, '2015')
             image1_list = sorted(glob(os.path.join(root_15, image_set, 'image_2/*_10.png')))
             image2_list = sorted(glob(os.path.join(root_15, image_set, 'image_3/*_10.png')))
             disp_list = sorted(glob(os.path.join(root_15, 'training', 'disp_occ_0/*_10.png'))) if image_set == 'training' else [osp.join(root, 'training/disp_occ_0/000085_10.png')]*len(image1_list)
@@ -374,91 +411,115 @@ def fetch_dataloader(args):
     if hasattr(args, "do_flip") and args.do_flip is not None:
         aug_params["do_flip"] = args.do_flip
 
+    data_path = args.data_path if hasattr(args, 'data_path') else '/data/StereoDatasets/'
+    def resolve_sceneflow_root(base_path):
+        candidates = [
+            os.path.join(base_path, 'sceneflow'),
+            os.path.join(base_path, 'SceneFlow'),
+            base_path,
+        ]
+        for root in candidates:
+            for dstype in ['frames_finalpass', 'frames_finlpass', 'frames_cleanpass']:
+                matched = glob(os.path.join(root, '**', dstype, 'TRAIN', '**', 'left', '*.png'), recursive=True)
+                if len(matched) > 0:
+                    return root
+        return os.path.join(base_path, 'sceneflow')
+    def resolve_sceneflow_dstype(root):
+        candidates = ['frames_finalpass', 'frames_finlpass', 'frames_cleanpass']
+        for dstype in candidates:
+            matched = glob(os.path.join(root, '**', dstype, 'TRAIN', '**', 'left', '*.png'), recursive=True)
+            if len(matched) > 0:
+                return dstype
+        return 'frames_finalpass'
+    sceneflow_root = resolve_sceneflow_root(data_path)
+    sceneflow_dstype = resolve_sceneflow_dstype(sceneflow_root)
+    logging.info(f"Resolved SceneFlow root: {sceneflow_root}")
+    logging.info(f"Resolved SceneFlow dstype: {sceneflow_dstype}")
 
     train_dataset = None
     for dataset_name in args.train_datasets:
         if dataset_name == 'sceneflow':
-            new_dataset = SceneFlowDatasets(aug_params, dstype='frames_finalpass')
+            new_dataset = SceneFlowDatasets(aug_params, root=sceneflow_root, dstype=sceneflow_dstype)
             logging.info(f"Adding {len(new_dataset)} samples from SceneFlow")
         elif dataset_name == 'vkitti2':
-            new_dataset = VKITTI2(aug_params)
+            new_dataset = VKITTI2(aug_params, root=os.path.join(data_path, 'vkitti2'))
             logging.info(f"Adding {len(new_dataset)} samples from VKITTI2")
         elif dataset_name == 'kitti':
-            kitti12 = KITTI(aug_params, year=2012)
+            kitti12 = KITTI(aug_params, root=os.path.join(data_path, 'kitti'), year=2012)
             logging.info(f"Adding {len(kitti12)} samples from KITTI 2012")
-            kitti15 = KITTI(aug_params, year=2015)
+            kitti15 = KITTI(aug_params, root=os.path.join(data_path, 'kitti'), year=2015)
             logging.info(f"Adding {len(kitti15)} samples from KITTI 2015")
             new_dataset = kitti12 + kitti15
             logging.info(f"Adding {len(new_dataset)} samples from KITTI")
         elif dataset_name == 'eth3d_train':
-            tartanair = TartanAir(aug_params)
+            tartanair = TartanAir(aug_params, root=os.path.join(data_path, 'tartanair'))
             logging.info(f"Adding {len(tartanair)} samples from Tartain Air")
-            sceneflow = SceneFlowDatasets(aug_params, dstype='frames_finalpass')
+            sceneflow = SceneFlowDatasets(aug_params, root=sceneflow_root, dstype=sceneflow_dstype)
             logging.info(f"Adding {len(sceneflow)} samples from SceneFlow")
-            sintel = SintelStereo(aug_params)
+            sintel = SintelStereo(aug_params, root=os.path.join(data_path, 'sintelstereo'))
             logging.info(f"Adding {len(sintel)} samples from Sintel Stereo")
-            crestereo = CREStereoDataset(aug_params)
+            crestereo = CREStereoDataset(aug_params, root=os.path.join(data_path, 'crestereo'))
             logging.info(f"Adding {len(crestereo)} samples from CREStereo Dataset")
-            eth3d = ETH3D(aug_params)
+            eth3d = ETH3D(aug_params, root=os.path.join(data_path, 'eth3d'))
             logging.info(f"Adding {len(eth3d)} samples from ETH3D")
-            instereo2k = InStereo2K(aug_params)
+            instereo2k = InStereo2K(aug_params, root=os.path.join(data_path, 'instereo2k'))
             logging.info(f"Adding {len(instereo2k)} samples from InStereo2K")
             new_dataset = tartanair + sceneflow + sintel * 50 + eth3d * 1000 + instereo2k  * 100 + crestereo * 2
             logging.info(f"Adding {len(new_dataset)} samples from ETH3D Mixture Dataset")
         elif dataset_name == 'eth3d_finetune':
-            crestereo = CREStereoDataset(aug_params)
+            crestereo = CREStereoDataset(aug_params, root=os.path.join(data_path, 'crestereo'))
             logging.info(f"Adding {len(crestereo)} samples from CREStereo Dataset")            
-            eth3d = ETH3D(aug_params)
+            eth3d = ETH3D(aug_params, root=os.path.join(data_path, 'eth3d'))
             logging.info(f"Adding {len(eth3d)} samples from ETH3D")
-            instereo2k = InStereo2K(aug_params)
+            instereo2k = InStereo2K(aug_params, root=os.path.join(data_path, 'instereo2k'))
             logging.info(f"Adding {len(instereo2k)} samples from InStereo2K")
             new_dataset = eth3d * 1000 + instereo2k * 10 + crestereo
             logging.info(f"Adding {len(new_dataset)} samples from ETH3D Mixture Dataset")
         elif dataset_name == 'middlebury_train':
-            tartanair = TartanAir(aug_params)
+            tartanair = TartanAir(aug_params, root=os.path.join(data_path, 'tartanair'))
             logging.info(f"Adding {len(tartanair)} samples from Tartain Air")
-            sceneflow = SceneFlowDatasets(aug_params, dstype='frames_finalpass')
+            sceneflow = SceneFlowDatasets(aug_params, root=sceneflow_root, dstype=sceneflow_dstype)
             logging.info(f"Adding {len(sceneflow)} samples from SceneFlow")
-            fallingthings = FallingThings(aug_params)
+            fallingthings = FallingThings(aug_params, root=os.path.join(data_path, 'fallingthings'))
             logging.info(f"Adding {len(fallingthings)} samples from FallingThings")
-            carla = CARLA(aug_params)
+            carla = CARLA(aug_params, root=os.path.join(data_path, 'carla-highres'))
             logging.info(f"Adding {len(carla)} samples from CARLA")
-            crestereo = CREStereoDataset(aug_params)
+            crestereo = CREStereoDataset(aug_params, root=os.path.join(data_path, 'crestereo'))
             logging.info(f"Adding {len(crestereo)} samples from CREStereo Dataset")             
-            instereo2k = InStereo2K(aug_params)
+            instereo2k = InStereo2K(aug_params, root=os.path.join(data_path, 'instereo2k'))
             logging.info(f"Adding {len(instereo2k)} samples from InStereo2K")
-            mb2005 = Middlebury(aug_params, split='2005')
+            mb2005 = Middlebury(aug_params, root=os.path.join(data_path, 'middlebury'), split='2005')
             logging.info(f"Adding {len(mb2005)} samples from Middlebury 2005")
-            mb2006 = Middlebury(aug_params, split='2006')
+            mb2006 = Middlebury(aug_params, root=os.path.join(data_path, 'middlebury'), split='2006')
             logging.info(f"Adding {len(mb2006)} samples from Middlebury 2006")
-            mb2014 = Middlebury(aug_params, split='2014')
+            mb2014 = Middlebury(aug_params, root=os.path.join(data_path, 'middlebury'), split='2014')
             logging.info(f"Adding {len(mb2014)} samples from Middlebury 2014")
-            mb2021 = Middlebury(aug_params, split='2021')
+            mb2021 = Middlebury(aug_params, root=os.path.join(data_path, 'middlebury'), split='2021')
             logging.info(f"Adding {len(mb2021)} samples from Middlebury 2021")
-            mbeval3 = Middlebury(aug_params, split='MiddEval3', resolution='H')
+            mbeval3 = Middlebury(aug_params, root=os.path.join(data_path, 'middlebury'), split='MiddEval3', resolution='H')
             logging.info(f"Adding {len(mbeval3)} samples from Middlebury Eval3")
             new_dataset = tartanair + sceneflow + fallingthings + instereo2k * 50 + carla * 50 + crestereo + mb2005 * 200 + mb2006 * 200 + mb2014 * 200 + mb2021 * 200 + mbeval3 * 200
             logging.info(f"Adding {len(new_dataset)} samples from Middlebury Mixture Dataset")
         elif dataset_name == 'middlebury_finetune':
-            crestereo = CREStereoDataset(aug_params)
+            crestereo = CREStereoDataset(aug_params, root=os.path.join(data_path, 'crestereo'))
             logging.info(f"Adding {len(crestereo)} samples from CREStereo Dataset")                 
-            instereo2k = InStereo2K(aug_params)
+            instereo2k = InStereo2K(aug_params, root=os.path.join(data_path, 'instereo2k'))
             logging.info(f"Adding {len(instereo2k)} samples from InStereo2K")
-            carla = CARLA(aug_params)
+            carla = CARLA(aug_params, root=os.path.join(data_path, 'carla-highres'))
             logging.info(f"Adding {len(carla)} samples from CARLA")
-            mb2005 = Middlebury(aug_params, split='2005')
+            mb2005 = Middlebury(aug_params, root=os.path.join(data_path, 'middlebury'), split='2005')
             logging.info(f"Adding {len(mb2005)} samples from Middlebury 2005")
-            mb2006 = Middlebury(aug_params, split='2006')
+            mb2006 = Middlebury(aug_params, root=os.path.join(data_path, 'middlebury'), split='2006')
             logging.info(f"Adding {len(mb2006)} samples from Middlebury 2006")
-            mb2014 = Middlebury(aug_params, split='2014')
+            mb2014 = Middlebury(aug_params, root=os.path.join(data_path, 'middlebury'), split='2014')
             logging.info(f"Adding {len(mb2014)} samples from Middlebury 2014")
-            mb2021 = Middlebury(aug_params, split='2021')
+            mb2021 = Middlebury(aug_params, root=os.path.join(data_path, 'middlebury'), split='2021')
             logging.info(f"Adding {len(mb2021)} samples from Middlebury 2021")
-            mbeval3 = Middlebury(aug_params, split='MiddEval3', resolution='H')
+            mbeval3 = Middlebury(aug_params, root=os.path.join(data_path, 'middlebury'), split='MiddEval3', resolution='H')
             logging.info(f"Adding {len(mbeval3)} samples from Middlebury Eval3")
-            mbeval3_f = Middlebury(aug_params, split='MiddEval3', resolution='F')
+            mbeval3_f = Middlebury(aug_params, root=os.path.join(data_path, 'middlebury'), split='MiddEval3', resolution='F')
             logging.info(f"Adding {len(mbeval3)} samples from Middlebury Eval3")
-            fallingthings = FallingThings(aug_params)
+            fallingthings = FallingThings(aug_params, root=os.path.join(data_path, 'fallingthings'))
             logging.info(f"Adding {len(fallingthings)} samples from FallingThings")
             new_dataset = crestereo + instereo2k * 50 + carla * 50 + mb2005 * 200 + mb2006 * 200 + mb2014 * 200 + mb2021 * 200 + mbeval3 * 200 + mbeval3_f * 200 + fallingthings * 10
             logging.info(f"Adding {len(new_dataset)} samples from Middlebury Mixture Dataset")
