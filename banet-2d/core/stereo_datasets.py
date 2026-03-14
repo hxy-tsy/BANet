@@ -145,12 +145,21 @@ class SceneFlowDatasets(StereoDataset):
         if len(left_images) == 0:
             left_images = sorted( glob(osp.join(root, 'Flyingthings3d', self.dstype, split, '*/*/left/*.png')) )
         if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, 'Flyingthing3d', self.dstype, split, '*/*/left/*.png')) )
+        if len(left_images) == 0:
             left_images = sorted( glob(osp.join(root, 'FlyingThings3D', self.dstype, split, '*/*/left/*.png')) )
         if len(left_images) == 0:
             left_images = sorted( glob(osp.join(root, self.dstype, split, '*/*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, '**', self.dstype, split, '**', 'left', '*.png'), recursive=True) )
             
         right_images = [ im.replace('left', 'right') for im in left_images ]
-        disparity_images = [ im.replace(self.dstype, 'disparity').replace('.png', '.pfm') for im in left_images ]
+        disparity_images = []
+        for im in left_images:
+            disp_path = im.replace(self.dstype, 'disparity').replace('.png', '.pfm')
+            if not os.path.exists(disp_path):
+                disp_path = im.replace(self.dstype, 'Disparity').replace('.png', '.pfm')
+            disparity_images.append(disp_path)
 
         # Choose a random subset of 400 images for validation
         state = np.random.get_state()
@@ -175,9 +184,16 @@ class SceneFlowDatasets(StereoDataset):
             left_images = sorted( glob(osp.join(root, 'Monkaa', self.dstype, split, '*/left/*.png')) )
         if len(left_images) == 0:
             left_images = sorted( glob(osp.join(root, self.dstype, split, '*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, '**', self.dstype, split, '**', 'left', '*.png'), recursive=True) )
 
         right_images = [ image_file.replace('left', 'right') for image_file in left_images ]
-        disparity_images = [ im.replace(self.dstype, 'disparity').replace('.png', '.pfm') for im in left_images ]
+        disparity_images = []
+        for im in left_images:
+            disp_path = im.replace(self.dstype, 'disparity').replace('.png', '.pfm')
+            if not os.path.exists(disp_path):
+                disp_path = im.replace(self.dstype, 'Disparity').replace('.png', '.pfm')
+            disparity_images.append(disp_path)
 
         for img1, img2, disp in zip(left_images, right_images, disparity_images):
             self.image_list += [ [img1, img2] ]
@@ -195,9 +211,16 @@ class SceneFlowDatasets(StereoDataset):
             left_images = sorted( glob(osp.join(root, 'Driving', self.dstype, split, '*/*/*/left/*.png')) )
         if len(left_images) == 0:
             left_images = sorted( glob(osp.join(root, self.dstype, split, '*/*/*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, '**', self.dstype, split, '**', 'left', '*.png'), recursive=True) )
             
         right_images = [ image_file.replace('left', 'right') for image_file in left_images ]
-        disparity_images = [ im.replace(self.dstype, 'disparity').replace('.png', '.pfm') for im in left_images ]
+        disparity_images = []
+        for im in left_images:
+            disp_path = im.replace(self.dstype, 'disparity').replace('.png', '.pfm')
+            if not os.path.exists(disp_path):
+                disp_path = im.replace(self.dstype, 'Disparity').replace('.png', '.pfm')
+            disparity_images.append(disp_path)
 
         for img1, img2, disp in zip(left_images, right_images, disparity_images):
             self.image_list += [ [img1, img2] ]
