@@ -2,7 +2,8 @@
 from __future__ import print_function, division
 
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '0, 1'
+if 'CUDA_VISIBLE_DEVICES' not in os.environ:
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
 
 import argparse
 import logging
@@ -109,7 +110,9 @@ class Logger:
 
 def train(args):
 
-    model = nn.DataParallel(BANet(args))
+    num_gpus = torch.cuda.device_count()
+    logging.info(f"Visible GPU count: {num_gpus}, CUDA_VISIBLE_DEVICES={os.environ.get('CUDA_VISIBLE_DEVICES', 'ALL')}")
+    model = nn.DataParallel(BANet(args), device_ids=list(range(num_gpus)))
     print("Parameter Count: %d" % count_parameters(model))
     train_loader = datasets.fetch_dataloader(args)
     optimizer, scheduler = fetch_optimizer(args, model)
