@@ -374,45 +374,47 @@ def fetch_dataloader(args):
     if hasattr(args, "do_flip") and args.do_flip is not None:
         aug_params["do_flip"] = args.do_flip
 
+    # Get data path from args if available
+    data_path = getattr(args, 'data_path', '/data/StereoDatasets/')
 
     train_dataset = None
     for dataset_name in args.train_datasets:
         if dataset_name == 'sceneflow':
-            new_dataset = SceneFlowDatasets(aug_params, dstype='frames_finalpass')
+            new_dataset = SceneFlowDatasets(aug_params, root=data_path + 'sceneflow/', dstype='frames_finalpass')
             logging.info(f"Adding {len(new_dataset)} samples from SceneFlow")
         elif dataset_name == 'vkitti2':
-            new_dataset = VKITTI2(aug_params)
+            new_dataset = VKITTI2(aug_params, root=data_path + 'vkitti2/')
             logging.info(f"Adding {len(new_dataset)} samples from VKITTI2")
         elif dataset_name == 'kitti':
-            kitti12 = KITTI(aug_params, year=2012)
+            kitti12 = KITTI(aug_params, root=data_path + 'kitti/', year=2012)
             logging.info(f"Adding {len(kitti12)} samples from KITTI 2012")
-            kitti15 = KITTI(aug_params, year=2015)
+            kitti15 = KITTI(aug_params, root=data_path + 'kitti/', year=2015)
             logging.info(f"Adding {len(kitti15)} samples from KITTI 2015")
             new_dataset = kitti12 + kitti15
             logging.info(f"Adding {len(new_dataset)} samples from KITTI")
 
         elif dataset_name == 'vkitti_kitti':
-            kitti12 = KITTI(aug_params, year=2012)
+            kitti12 = KITTI(aug_params, root=data_path + 'kitti/', year=2012)
             logging.info(f"Adding {len(kitti12)} samples from KITTI 2012")
-            kitti15 = KITTI(aug_params, year=2015)
+            kitti15 = KITTI(aug_params, root=data_path + 'kitti/', year=2015)
             logging.info(f"Adding {len(kitti15)} samples from KITTI 2015")
-            vkitti2 = VKITTI2(aug_params)
+            vkitti2 = VKITTI2(aug_params, root=data_path + 'vkitti2/')
             logging.info(f"Adding {len(vkitti2)} samples from VKITTI2")
             new_dataset = kitti12 * 200 + kitti15 * 200 + vkitti2
             logging.info(f"Adding {len(new_dataset)} samples from KITTI")
 
         elif dataset_name == 'eth3d_train':
-            tartanair = TartanAir(aug_params)
+            tartanair = TartanAir(aug_params, root=data_path + 'tartanair/')
             logging.info(f"Adding {len(tartanair)} samples from Tartain Air")
-            sceneflow = SceneFlowDatasets(aug_params, dstype='frames_finalpass')
+            sceneflow = SceneFlowDatasets(aug_params, root=data_path + 'sceneflow/', dstype='frames_finalpass')
             logging.info(f"Adding {len(sceneflow)} samples from SceneFlow")
-            sintel = SintelStereo(aug_params)
+            sintel = SintelStereo(aug_params, root=data_path + 'sintelstereo/')
             logging.info(f"Adding {len(sintel)} samples from Sintel Stereo")
-            crestereo = CREStereoDataset(aug_params)
+            crestereo = CREStereoDataset(aug_params, root=data_path + 'crestereo/')
             logging.info(f"Adding {len(crestereo)} samples from CREStereo Dataset")
-            eth3d = ETH3D(aug_params)
+            eth3d = ETH3D(aug_params, root=data_path + 'eth3d/')
             logging.info(f"Adding {len(eth3d)} samples from ETH3D")
-            instereo2k = InStereo2K(aug_params)
+            instereo2k = InStereo2K(aug_params, root=data_path + 'instereo2k/')
             logging.info(f"Adding {len(instereo2k)} samples from InStereo2K")
             new_dataset = tartanair + sceneflow + sintel * 50 + eth3d * 1000 + instereo2k  * 100 + crestereo * 2
             logging.info(f"Adding {len(new_dataset)} samples from ETH3D Mixture Dataset")
