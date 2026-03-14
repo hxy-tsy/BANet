@@ -281,16 +281,17 @@ class InStereo2K(StereoDataset):
 class KITTI(StereoDataset):
     def __init__(self, aug_params=None, root='/data/StereoDatasets/kitti', image_set='training', year=2015):
         super(KITTI, self).__init__(aug_params, sparse=True, reader=frame_utils.readDispKITTI)
-        assert os.path.exists(root)
+        if not os.path.exists(root):
+            logging.warning(f"KITTI root path not found: {root}")
 
         if year == 2012:
-            root_12 = '/data/StereoDatasets/kitti/2012'
+            root_12 = os.path.join(root, '2012')
             image1_list = sorted(glob(os.path.join(root_12, image_set, 'colored_0/*_10.png')))
             image2_list = sorted(glob(os.path.join(root_12, image_set, 'colored_1/*_10.png')))
             disp_list = sorted(glob(os.path.join(root_12, 'training', 'disp_occ/*_10.png'))) if image_set == 'training' else [osp.join(root, 'training/disp_occ/000085_10.png')]*len(image1_list)
 
         if year == 2015:
-            root_15 = '/data/StereoDatasets/kitti/2015'
+            root_15 = os.path.join(root, '2015')
             image1_list = sorted(glob(os.path.join(root_15, image_set, 'image_2/*_10.png')))
             image2_list = sorted(glob(os.path.join(root_15, image_set, 'image_3/*_10.png')))
             disp_list = sorted(glob(os.path.join(root_15, 'training', 'disp_occ_0/*_10.png'))) if image_set == 'training' else [osp.join(root, 'training/disp_occ_0/000085_10.png')]*len(image1_list)
@@ -384,9 +385,10 @@ def fetch_dataloader(args):
             new_dataset = VKITTI2(aug_params)
             logging.info(f"Adding {len(new_dataset)} samples from VKITTI2")
         elif dataset_name == 'kitti':
-            kitti12 = KITTI(aug_params, year=2012)
+            root = args.kitti_path if hasattr(args, 'kitti_path') and args.kitti_path else '/data/StereoDatasets/kitti'
+            kitti12 = KITTI(aug_params, root=root, year=2012)
             logging.info(f"Adding {len(kitti12)} samples from KITTI 2012")
-            kitti15 = KITTI(aug_params, year=2015)
+            kitti15 = KITTI(aug_params, root=root, year=2015)
             logging.info(f"Adding {len(kitti15)} samples from KITTI 2015")
             new_dataset = kitti12 + kitti15
             logging.info(f"Adding {len(new_dataset)} samples from KITTI")

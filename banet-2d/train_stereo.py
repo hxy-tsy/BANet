@@ -185,6 +185,7 @@ if __name__ == '__main__':
     parser.add_argument('--image_size', type=int, nargs='+', default=[256, 512], help="size of the random image crops used during training.")
     parser.add_argument('--wdecay', type=float, default=.00001, help="Weight decay in optimizer.")
     parser.add_argument('--max_disp', type=int, default=192, help="max disp of geometry encoding volume")
+    parser.add_argument('--kitti_path', default=None, help="Path to KITTI dataset root")
 
     # Data augmentation
     parser.add_argument('--img_gamma', type=float, nargs='+', default=None, help="gamma range")
@@ -194,6 +195,11 @@ if __name__ == '__main__':
     parser.add_argument('--noyjitter', action='store_true', help='don\'t simulate imperfect rectification')
 
     args = parser.parse_args()
+
+    ckpt_path = f'./checkpoints/{args.name}'
+    log_path = f'./checkpoints/{args.name}'
+    if not os.path.exists(ckpt_path):
+        os.makedirs(ckpt_path)
 
     torch.manual_seed(666)
     np.random.seed(666)
