@@ -143,6 +143,8 @@ class SceneFlowDatasets(StereoDataset):
         root = self.root
         left_images = sorted( glob(osp.join(root, 'flyingthings3d', self.dstype, split, '*/*/left/*.png')) )
         if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, 'Flyingthings3d', self.dstype, split, '*/*/left/*.png')) )
+        if len(left_images) == 0:
             left_images = sorted( glob(osp.join(root, 'FlyingThings3D', self.dstype, split, '*/*/left/*.png')) )
         if len(left_images) == 0:
             left_images = sorted( glob(osp.join(root, self.dstype, split, '*/*/left/*.png')) )
