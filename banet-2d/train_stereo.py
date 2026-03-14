@@ -2,8 +2,7 @@
 from __future__ import print_function, division
 
 import os
-if 'CUDA_VISIBLE_DEVICES' not in os.environ:
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0, 1'
 
 import argparse
 import logging
@@ -17,7 +16,6 @@ from torch.utils.tensorboard import SummaryWriter
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.cuda.amp import autocast, GradScaler
 from core.BANet import BANet
 from evaluate_stereo import validate_sceneflow
 import core.stereo_datasets as datasets
@@ -111,13 +109,10 @@ class Logger:
 
 def train(args):
 
-    num_gpus = torch.cuda.device_count()
-    logging.info(f"Visible GPU count: {num_gpus}, CUDA_VISIBLE_DEVICES={os.environ.get('CUDA_VISIBLE_DEVICES', 'ALL')}")
-    model = nn.DataParallel(BANet(args), device_ids=list(range(num_gpus)))
+    model = nn.DataParallel(BANet(args))
     print("Parameter Count: %d" % count_parameters(model))
     train_loader = datasets.fetch_dataloader(args)
     optimizer, scheduler = fetch_optimizer(args, model)
-    scaler = GradScaler(enabled=args.amp)
     total_steps = 0
     logger = Logger(model, scheduler)
 
@@ -137,24 +132,21 @@ def train(args):
     while should_keep_training:
 
         for i_batch, (_, *data_blob) in enumerate(tqdm(train_loader)):
-            optimizer.zero_grad(set_to_none=True)
-            image1, image2, disp_gt, valid = [x.cuda(non_blocking=True) for x in data_blob]
+            optimizer.zero_grad()
+            image1, image2, disp_gt, valid = [x.cuda() for x in data_blob]
 
             assert model.training
-            with autocast(enabled=args.amp):
-                disp_preds = model(image1, image2, args.max_disp)
-                loss, metrics = compute_loss(disp_preds, disp_gt, valid, max_disp=args.max_disp)
+            disp_preds = model(image1, image2, args.max_disp)
             assert model.training
 
+            loss, metrics = compute_loss(disp_preds, disp_gt, valid, max_disp=args.max_disp)
             logger.writer.add_scalar("live_loss", loss.item(), global_batch_num)
             logger.writer.add_scalar(f'learning_rate', optimizer.param_groups[0]['lr'], global_batch_num)
             global_batch_num += 1
-            scaler.scale(loss).backward()
-            scaler.unscale_(optimizer)
+            loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
 
-            scaler.step(optimizer)
-            scaler.update()
+            optimizer.step()
             scheduler.step()
             logger.push(metrics)
 
@@ -191,9 +183,6 @@ if __name__ == '__main__':
     parser.add_argument('--data_path', type=str, default='/data/StereoDatasets/', help="root path for datasets.")
     parser.add_argument('--lr', type=float, default=0.0008, help="max learning rate.")
     parser.add_argument('--num_steps', type=int, default=200000, help="length of training schedule.")
-    parser.add_argument('--num_workers', type=int, default=16, help="number of dataloader workers.")
-    parser.add_argument('--prefetch_factor', type=int, default=4, help="dataloader prefetch factor.")
-    parser.add_argument('--amp', action='store_true', help="enable mixed precision training")
     parser.add_argument('--image_size', type=int, nargs='+', default=[256, 512], help="size of the random image crops used during training.")
     parser.add_argument('--wdecay', type=float, default=.00001, help="Weight decay in optimizer.")
     parser.add_argument('--max_disp', type=int, default=192, help="max disp of geometry encoding volume")
@@ -209,9 +198,6 @@ if __name__ == '__main__':
 
     torch.manual_seed(666)
     np.random.seed(666)
-    torch.backends.cudnn.benchmark = True
-    torch.backends.cuda.matmul.allow_tf32 = True
-    torch.backends.cudnn.allow_tf32 = True
     
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s')
