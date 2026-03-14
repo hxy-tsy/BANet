@@ -539,8 +539,20 @@ def fetch_dataloader(args):
 
         train_dataset = new_dataset if train_dataset is None else train_dataset + new_dataset
 
-    train_loader = data.DataLoader(train_dataset, batch_size=args.batch_size, 
-        pin_memory=True, shuffle=True, num_workers=8, drop_last=True)
+    num_workers = args.num_workers if hasattr(args, 'num_workers') else 8
+    prefetch_factor = args.prefetch_factor if hasattr(args, 'prefetch_factor') else 2
+    dataloader_kwargs = dict(
+        batch_size=args.batch_size,
+        pin_memory=True,
+        shuffle=True,
+        num_workers=num_workers,
+        drop_last=True,
+        persistent_workers=num_workers > 0,
+    )
+    if num_workers > 0:
+        dataloader_kwargs['prefetch_factor'] = prefetch_factor
+    train_loader = data.DataLoader(train_dataset, **dataloader_kwargs)
+    logging.info(f'Dataloader workers={num_workers}, prefetch_factor={prefetch_factor if num_workers > 0 else "NA"}')
 
     logging.info('Training with %d image pairs' % len(train_dataset))
     return train_loader

@@ -186,6 +186,8 @@ if __name__ == '__main__':
     parser.add_argument('--data_path', type=str, default='/data/StereoDatasets/', help="root path for datasets.")
     parser.add_argument('--lr', type=float, default=0.0008, help="max learning rate.")
     parser.add_argument('--num_steps', type=int, default=200000, help="length of training schedule.")
+    parser.add_argument('--num_workers', type=int, default=16, help="number of dataloader workers.")
+    parser.add_argument('--prefetch_factor', type=int, default=4, help="dataloader prefetch factor.")
     parser.add_argument('--image_size', type=int, nargs='+', default=[256, 512], help="size of the random image crops used during training.")
     parser.add_argument('--wdecay', type=float, default=.00001, help="Weight decay in optimizer.")
     parser.add_argument('--max_disp', type=int, default=192, help="max disp of geometry encoding volume")
@@ -201,6 +203,7 @@ if __name__ == '__main__':
 
     torch.manual_seed(666)
     np.random.seed(666)
+    torch.backends.cudnn.benchmark = True
     
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s')
