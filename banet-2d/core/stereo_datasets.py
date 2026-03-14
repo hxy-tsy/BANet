@@ -141,7 +141,12 @@ class SceneFlowDatasets(StereoDataset):
         original_length = len(self.disparity_list)
         # root = osp.join(self.root, 'FlyingThings3D')
         root = self.root
-        left_images = sorted( glob(osp.join(root, self.dstype, split, '*/*/left/*.png')) )
+        left_images = sorted( glob(osp.join(root, 'flyingthings3d', self.dstype, split, '*/*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, 'FlyingThings3D', self.dstype, split, '*/*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, self.dstype, split, '*/*/left/*.png')) )
+            
         right_images = [ im.replace('left', 'right') for im in left_images ]
         disparity_images = [ im.replace(self.dstype, 'disparity').replace('.png', '.pfm') for im in left_images ]
 
@@ -163,7 +168,12 @@ class SceneFlowDatasets(StereoDataset):
 
         original_length = len(self.disparity_list)
         root = self.root
-        left_images = sorted( glob(osp.join(root, self.dstype, split, '*/left/*.png')) )
+        left_images = sorted( glob(osp.join(root, 'monkaa', self.dstype, split, '*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, 'Monkaa', self.dstype, split, '*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, self.dstype, split, '*/left/*.png')) )
+
         right_images = [ image_file.replace('left', 'right') for image_file in left_images ]
         disparity_images = [ im.replace(self.dstype, 'disparity').replace('.png', '.pfm') for im in left_images ]
 
@@ -178,7 +188,12 @@ class SceneFlowDatasets(StereoDataset):
 
         original_length = len(self.disparity_list)
         root = self.root
-        left_images = sorted( glob(osp.join(root, self.dstype, split, '*/*/*/left/*.png')) )
+        left_images = sorted( glob(osp.join(root, 'driving', self.dstype, split, '*/*/*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, 'Driving', self.dstype, split, '*/*/*/left/*.png')) )
+        if len(left_images) == 0:
+            left_images = sorted( glob(osp.join(root, self.dstype, split, '*/*/*/left/*.png')) )
+            
         right_images = [ image_file.replace('left', 'right') for image_file in left_images ]
         disparity_images = [ im.replace(self.dstype, 'disparity').replace('.png', '.pfm') for im in left_images ]
 
@@ -374,13 +389,12 @@ def fetch_dataloader(args):
     if hasattr(args, "do_flip") and args.do_flip is not None:
         aug_params["do_flip"] = args.do_flip
 
-    # Get data path from args if available
-    data_path = getattr(args, 'data_path', '/data/StereoDatasets/')
+    data_path = args.data_path if hasattr(args, 'data_path') else '/data/StereoDatasets/'
 
     train_dataset = None
     for dataset_name in args.train_datasets:
         if dataset_name == 'sceneflow':
-            new_dataset = SceneFlowDatasets(aug_params, root=data_path + 'sceneflow/', dstype='frames_finalpass')
+            new_dataset = SceneFlowDatasets(aug_params, root=os.path.join(data_path, 'sceneflow'), dstype='frames_finalpass')
             logging.info(f"Adding {len(new_dataset)} samples from SceneFlow")
         elif dataset_name == 'vkitti2':
             new_dataset = VKITTI2(aug_params, root=data_path + 'vkitti2/')
