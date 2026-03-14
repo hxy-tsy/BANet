@@ -415,11 +415,33 @@ def fetch_dataloader(args):
         aug_params["do_flip"] = args.do_flip
 
     data_path = args.data_path if hasattr(args, 'data_path') else '/data/StereoDatasets/'
+    def resolve_sceneflow_root(base_path):
+        candidates = [
+            os.path.join(base_path, 'sceneflow'),
+            os.path.join(base_path, 'SceneFlow'),
+            base_path,
+        ]
+        for root in candidates:
+            matched = glob(os.path.join(root, '**', 'frames_finalpass', 'TRAIN', '**', 'left', '*.png'), recursive=True)
+            if len(matched) > 0:
+                return root
+        return os.path.join(base_path, 'sceneflow')
+    def resolve_sceneflow_dstype(root):
+        candidates = ['frames_finalpass', 'frames_finlpass', 'frames_cleanpass']
+        for dstype in candidates:
+            matched = glob(os.path.join(root, '**', dstype, 'TRAIN', '**', 'left', '*.png'), recursive=True)
+            if len(matched) > 0:
+                return dstype
+        return 'frames_finalpass'
+    sceneflow_root = resolve_sceneflow_root(data_path)
+    sceneflow_dstype = resolve_sceneflow_dstype(sceneflow_root)
+    logging.info(f"Resolved SceneFlow root: {sceneflow_root}")
+    logging.info(f"Resolved SceneFlow dstype: {sceneflow_dstype}")
 
     train_dataset = None
     for dataset_name in args.train_datasets:
         if dataset_name == 'sceneflow':
-            new_dataset = SceneFlowDatasets(aug_params, root=os.path.join(data_path, 'sceneflow'), dstype='frames_finalpass')
+            new_dataset = SceneFlowDatasets(aug_params, root=sceneflow_root, dstype=sceneflow_dstype)
             logging.info(f"Adding {len(new_dataset)} samples from SceneFlow")
         elif dataset_name == 'vkitti2':
             new_dataset = VKITTI2(aug_params, root=data_path + 'vkitti2/')
@@ -445,7 +467,7 @@ def fetch_dataloader(args):
         elif dataset_name == 'eth3d_train':
             tartanair = TartanAir(aug_params, root=data_path + 'tartanair/')
             logging.info(f"Adding {len(tartanair)} samples from Tartain Air")
-            sceneflow = SceneFlowDatasets(aug_params, root=data_path + 'sceneflow/', dstype='frames_finalpass')
+            sceneflow = SceneFlowDatasets(aug_params, root=sceneflow_root, dstype=sceneflow_dstype)
             logging.info(f"Adding {len(sceneflow)} samples from SceneFlow")
             sintel = SintelStereo(aug_params, root=data_path + 'sintelstereo/')
             logging.info(f"Adding {len(sintel)} samples from Sintel Stereo")
@@ -469,7 +491,7 @@ def fetch_dataloader(args):
         elif dataset_name == 'middlebury_train':
             tartanair = TartanAir(aug_params)
             logging.info(f"Adding {len(tartanair)} samples from Tartain Air")
-            sceneflow = SceneFlowDatasets(aug_params, dstype='frames_finalpass')
+            sceneflow = SceneFlowDatasets(aug_params, root=sceneflow_root, dstype=sceneflow_dstype)
             logging.info(f"Adding {len(sceneflow)} samples from SceneFlow")
             fallingthings = FallingThings(aug_params)
             logging.info(f"Adding {len(fallingthings)} samples from FallingThings")
