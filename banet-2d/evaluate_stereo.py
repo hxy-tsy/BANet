@@ -9,6 +9,7 @@ import argparse
 import time
 import logging
 import numpy as np
+from glob import glob
 import torch
 from tqdm import tqdm
 from core.BANet import BANet
@@ -120,10 +121,34 @@ def validate_kitti(model, iters=32, mixed_prec=False):
 
 
 @torch.no_grad()
-def validate_sceneflow(model):
+def validate_sceneflow(model, data_path='/data/StereoDatasets/'):
     """ Peform validation using the Scene Flow (TEST) split """
     model.eval()
-    val_dataset = datasets.SceneFlowDatasets(dstype='frames_finalpass', things_test=True)
+    root_candidates = [
+        os.path.join(data_path, 'sceneflow'),
+        os.path.join(data_path, 'SceneFlow'),
+        data_path,
+    ]
+    sceneflow_root = None
+    sceneflow_dstype = None
+    for root in root_candidates:
+        for dstype in ['frames_finalpass', 'frames_finlpass', 'frames_cleanpass']:
+            matched = glob(os.path.join(root, '**', dstype, 'TEST', '**', 'left', '*.png'), recursive=True)
+            if len(matched) > 0:
+                sceneflow_root = root
+                sceneflow_dstype = dstype
+                break
+        if sceneflow_root is not None:
+            break
+
+    if sceneflow_root is None:
+        logging.warning(f"SceneFlow validation set not found under data_path={data_path}, skip validation.")
+        return {'scene-disp-epe': float('nan'), 'scene-disp-d1': float('nan')}
+
+    val_dataset = datasets.SceneFlowDatasets(root=sceneflow_root, dstype=sceneflow_dstype, things_test=True)
+    if len(val_dataset) == 0:
+        logging.warning(f"SceneFlow validation dataset is empty: root={sceneflow_root}, dstype={sceneflow_dstype}.")
+        return {'scene-disp-epe': float('nan'), 'scene-disp-d1': float('nan')}
 
     val_loader = data.DataLoader(val_dataset, batch_size=8, 
         pin_memory=True, shuffle=False, num_workers=8)
@@ -147,6 +172,10 @@ def validate_sceneflow(model):
         out = (epe > 3.0)
         epe_list.append(epe.mean().item())
         out_list.append(out.cpu().numpy())
+
+    if len(out_list) == 0:
+        logging.warning("SceneFlow validation produced empty predictions, skip metric aggregation.")
+        return {'scene-disp-epe': float('nan'), 'scene-disp-d1': float('nan')}
 
     epe_list = np.array(epe_list)
     out_list = np.concatenate(out_list)

@@ -155,7 +155,7 @@ def train(args):
                 logging.info(f"Saving file {save_path.absolute()}")
                 torch.save(model.state_dict(), save_path)
                 # results = validate_kitti(model.module, iters=args.valid_iters)
-                results = validate_sceneflow(model.module)
+                results = validate_sceneflow(model.module, data_path=args.data_path)
                 logger.write_dict(results)
                 model.train()
 
