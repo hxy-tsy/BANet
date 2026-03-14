@@ -72,7 +72,26 @@ def validate_kitti(model, data_path='/data/StereoDatasets/', iters=32, mixed_pre
     """ Peform validation using the KITTI-2015 (train) split """
     model.eval()
     aug_params = {}
-    val_dataset = datasets.KITTI(aug_params, root=os.path.join(data_path, 'kitti'), image_set='training')
+    kitti_candidates = [
+        os.path.join(data_path, 'kitti'),
+        os.path.join(data_path, 'KITTI'),
+        os.path.join(data_path, 'Kitti'),
+        data_path,
+    ]
+    kitti_root = os.path.join(data_path, 'kitti')
+    for root in kitti_candidates:
+        patterns = [
+            os.path.join(root, '2015', 'training', 'image_2', '*_10.png'),
+            os.path.join(root, 'KITTI_2015', 'training', 'image_2', '*_10.png'),
+            os.path.join(root, 'training', 'image_2', '*_10.png'),
+        ]
+        if any(len(glob(pattern)) > 0 for pattern in patterns):
+            if os.path.basename(root).upper() == 'KITTI_2015':
+                kitti_root = os.path.dirname(root)
+            else:
+                kitti_root = root
+            break
+    val_dataset = datasets.KITTI(aug_params, root=kitti_root, image_set='training')
     torch.backends.cudnn.benchmark = True
 
     out_list, epe_list, elapsed_list = [], [], []

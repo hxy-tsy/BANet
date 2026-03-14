@@ -321,16 +321,26 @@ class KITTI(StereoDataset):
         assert os.path.exists(root)
 
         if year == 2012:
-            root_12 = os.path.join(root, '2012')
+            root_candidates_12 = [os.path.join(root, '2012'), os.path.join(root, 'KITTI_2012'), root]
+            root_12 = root_candidates_12[0]
+            for candidate in root_candidates_12:
+                if len(glob(os.path.join(candidate, image_set, 'colored_0/*_10.png'))) > 0:
+                    root_12 = candidate
+                    break
             image1_list = sorted(glob(os.path.join(root_12, image_set, 'colored_0/*_10.png')))
             image2_list = sorted(glob(os.path.join(root_12, image_set, 'colored_1/*_10.png')))
-            disp_list = sorted(glob(os.path.join(root_12, 'training', 'disp_occ/*_10.png'))) if image_set == 'training' else [osp.join(root, 'training/disp_occ/000085_10.png')]*len(image1_list)
+            disp_list = sorted(glob(os.path.join(root_12, 'training', 'disp_occ/*_10.png'))) if image_set == 'training' else [osp.join(root_12, 'training/disp_occ/000085_10.png')]*len(image1_list)
 
         if year == 2015:
-            root_15 = os.path.join(root, '2015')
+            root_candidates_15 = [os.path.join(root, '2015'), os.path.join(root, 'KITTI_2015'), root]
+            root_15 = root_candidates_15[0]
+            for candidate in root_candidates_15:
+                if len(glob(os.path.join(candidate, image_set, 'image_2/*_10.png'))) > 0:
+                    root_15 = candidate
+                    break
             image1_list = sorted(glob(os.path.join(root_15, image_set, 'image_2/*_10.png')))
             image2_list = sorted(glob(os.path.join(root_15, image_set, 'image_3/*_10.png')))
-            disp_list = sorted(glob(os.path.join(root_15, 'training', 'disp_occ_0/*_10.png'))) if image_set == 'training' else [osp.join(root, 'training/disp_occ_0/000085_10.png')]*len(image1_list)
+            disp_list = sorted(glob(os.path.join(root_15, 'training', 'disp_occ_0/*_10.png'))) if image_set == 'training' else [osp.join(root_15, 'training/disp_occ_0/000085_10.png')]*len(image1_list)
 
         for idx, (img1, img2, disp) in enumerate(zip(image1_list, image2_list, disp_list)):
             self.image_list += [ [img1, img2] ]
@@ -431,10 +441,33 @@ def fetch_dataloader(args):
             if len(matched) > 0:
                 return dstype
         return 'frames_finalpass'
+    def resolve_kitti_root(base_path):
+        candidates = [
+            os.path.join(base_path, 'kitti'),
+            os.path.join(base_path, 'KITTI'),
+            os.path.join(base_path, 'Kitti'),
+            base_path,
+        ]
+        for root in candidates:
+            patterns = [
+                os.path.join(root, '2015', 'training', 'image_2', '*_10.png'),
+                os.path.join(root, 'KITTI_2015', 'training', 'image_2', '*_10.png'),
+                os.path.join(root, '2012', 'training', 'colored_0', '*_10.png'),
+                os.path.join(root, 'KITTI_2012', 'training', 'colored_0', '*_10.png'),
+                os.path.join(root, 'training', 'image_2', '*_10.png'),
+                os.path.join(root, 'training', 'colored_0', '*_10.png'),
+            ]
+            if any(len(glob(pattern)) > 0 for pattern in patterns):
+                if os.path.basename(root).upper() in ['KITTI_2015', 'KITTI_2012']:
+                    return os.path.dirname(root)
+                return root
+        return os.path.join(base_path, 'kitti')
     sceneflow_root = resolve_sceneflow_root(data_path)
     sceneflow_dstype = resolve_sceneflow_dstype(sceneflow_root)
+    kitti_root = resolve_kitti_root(data_path)
     logging.info(f"Resolved SceneFlow root: {sceneflow_root}")
     logging.info(f"Resolved SceneFlow dstype: {sceneflow_dstype}")
+    logging.info(f"Resolved KITTI root: {kitti_root}")
 
     train_dataset = None
     for dataset_name in args.train_datasets:
@@ -445,9 +478,9 @@ def fetch_dataloader(args):
             new_dataset = VKITTI2(aug_params, root=os.path.join(data_path, 'vkitti2'))
             logging.info(f"Adding {len(new_dataset)} samples from VKITTI2")
         elif dataset_name == 'kitti':
-            kitti12 = KITTI(aug_params, root=os.path.join(data_path, 'kitti'), year=2012)
+            kitti12 = KITTI(aug_params, root=kitti_root, year=2012)
             logging.info(f"Adding {len(kitti12)} samples from KITTI 2012")
-            kitti15 = KITTI(aug_params, root=os.path.join(data_path, 'kitti'), year=2015)
+            kitti15 = KITTI(aug_params, root=kitti_root, year=2015)
             logging.info(f"Adding {len(kitti15)} samples from KITTI 2015")
             new_dataset = kitti12 + kitti15
             logging.info(f"Adding {len(new_dataset)} samples from KITTI")
