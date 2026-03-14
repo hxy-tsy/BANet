@@ -21,8 +21,8 @@ class FeatureNet(nn.Module):
         model = timm.create_model('mobilenetv2_100', pretrained=True)
         chans = [16, 24, 32, 96, 160]
         self.conv_stem = model.conv_stem
-        self.bn1 = model.bn1
-        self.act1 = model.act1
+        self.bn1 = model.bn1 if hasattr(model, 'bn1') else nn.Identity()
+        self.act1 = model.act1 if hasattr(model, 'act1') else model.act2 if hasattr(model, 'act2') else nn.Identity()
         self.block0 = model.blocks[0]
         self.block1 = model.blocks[1]
         self.block2 = model.blocks[2]
